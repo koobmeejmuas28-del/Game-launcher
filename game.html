@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>I Am Pro Game Launcher</title>
+<style>
+  body {
+    background: #121212;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  h1 {
+    margin-top: 20px;
+    color: #0f0; /* Changed to green */
+    text-shadow: 0 0 5px #0f0, 0 0 10px #0f0;
+  }
+  #controls {
+    margin: 10px 0;
+    position: relative;
+    z-index: 10;
+  }
+  select, button {
+    font-size: 16px;
+    padding: 10px;
+    margin: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  #game-container {
+    width: 100vw;
+    height: 80vh;
+    margin: 20px auto;
+    position: relative;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+  #game-container img {
+    max-width: 50%;
+    max-height: 50%;
+    width: auto;
+    height: auto;
+    margin: 10px 0;
+  }
+  iframe, canvas, object {
+    width: 100%;
+    height: 100%;
+    border: none;
+    position: relative;
+    z-index: 5;
+    object-fit: contain;
+  }
+  #glitch-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,255,0,0.05);
+    pointer-events: none;
+    z-index: 1;
+  }
+  @keyframes glitch {
+    0% { transform: translate(0,0); }
+    20% { transform: translate(-5px,5px); }
+    40% { transform: translate(5px,-5px); }
+    60% { transform: translate(-5px,-5px); }
+    80% { transform: translate(5px,5px); }
+    100% { transform: translate(0,0); }
+  }
+  #copyright {
+    position: absolute;
+    bottom: 5px;
+    left: 10px;
+    font-size: 12px;
+    color: #0f0;
+    background: rgba(0,0,0,0.5);
+    padding: 2px 5px;
+    border-radius: 3px;
+    z-index: 10;
+  }
+</style>
+<script src="https://unpkg.com/@ruffle-rs/ruffle"></script>
+</head>
+<body>
+
+<h1>I Am Pro Game Launcher</h1>
+<div id="controls">
+  <select id="gameSelect">
+    <option value="">-- Select a Game --</option>
+    <!-- SWF -->
+    <option value="hobo">Hobo (SWF)</option>
+    <option value="duck">Duck Life (SWF)</option>
+    <option value="fancypants">Fancy Pants Adventure (SWF)</option>
+    <option value="douche">Douchebag Life (SWF)</option>
+    <option value="agewar">Age of War (SWF)</option>
+    <option value="basketball">Basketball Legends (SWF)</option>
+    <option value="dig">Dig to China (SWF)</option>
+    <!-- Y8 -->
+    <option value="slope">Slope (Y8)</option>
+    <!-- Unity WebGL -->
+    <option value="motox3m3">Moto X3M 3 (Unity WebGL)</option>
+    <option value="lol1v1">1v1 LOL (Unity WebGL)</option>
+    <!-- Emulators -->
+    <option value="nba">NBA Hangtime (N64)</option>
+    <option value="madden">Madden 2001 (N64)</option>
+    <option value="gta2">GTA 2 (GBA)</option>
+    <option value="ippo">Hajime no Ippo (GBA)</option>
+    <option value="cod">COD Black Ops (NDS)</option>
+    <option value="fifa">FIFA Street (NDS)</option>
+    <option value="fifa99">FIFA 99 (N64)</option>
+    <option value="mortal">Mortal Kombat (SNES)</option>
+    <!-- Troll Roblox -->
+    <option value="trollroblox">Roblox (Now.gg Emulator)</option>
+  </select>
+  <button id="loadButton">Load Game</button>
+  <button id="fullscreenButton">Fullscreen</button>
+</div>
+
+<div id="game-container">
+  <div style="color:white;font-size:24px;font-family:Arial;margin-bottom:10px;">Loading..</div>
+  <img src="https://media1.tenor.com/m/d95fQmHhoagAAAAC/gng-opp.gif" alt="Goofy Loading GIF">
+  <div id="glitch-overlay"></div>
+  <div id="copyright">
+    Version 0 Studio -- KM the best programmer on Earth
+  </div>
+</div>
+
+<script>
+const select = document.getElementById('gameSelect');
+const loadButton = document.getElementById('loadButton');
+const fullscreenButton = document.getElementById('fullscreenButton');
+const container = document.getElementById('game-container');
+
+const games = {
+  // SWF
+  hobo: { type: 'swf', url: 'https://cdn.jsdelivr.net/gh/supaub/interstellar-3@8a13c735e7df6d86602b354e45c090405f21f45a/play/flash/swf/hobo.swf' },
+  duck: { type: 'swf', url: 'https://cdn.jsdelivr.net/gh/markrosenbaum/some-repo@aeb3030a3fb90987658ff4ee1063c64f6206152f/dl/duck-life.swf' },
+  fancypants: { type: 'swf', url: 'https://cdn.jsdelivr.net/gh/supaub/interstellar-3@8a13c735e7df6d86602b354e45c090405f21f45a/play/flash/swf/fancypantsadventure.swf' },
+  douche: { type: 'swf', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@fa43d798a8cafd1a87fdf9f78691c6f81823ee8b/Douchebag_Life.swf' },
+  agewar: { type: 'swf', url: 'https://cdn.jsdelivr.net/gh/vjspranav/FlashGames@c4afbfe9dd12f23ef93e19d7f3d298105448f349/games/Age_Of%20_War_2.swf' },
+  basketball: { type: 'swf', url: 'https://cdn.jsdelivr.net/gh/gameproxy/swf_storage_1@907a0283a4167ab7ce5a3f46da958d9deb1abdae/Basketball%20Legends.swf' },
+  dig: { type: 'swf', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@02d331c247a0931cf1ee18a8b59e1434841c4b67/dig%20to%20china.swf' },
+
+  // Y8
+  slope: { type: 'iframe', url: 'https://y8.com/embed/slope' },
+
+  // Unity WebGL
+  motox3m3: { type: 'unity', loader: 'https://cdn.jsdelivr.net/gh/n-101-1/1@main/2.7.js', data: 'https://cdn.jsdelivr.net/gh/n-101-1/1@main/2.7.json' },
+  lol1v1: { type: 'unity', loader: 'https://cdn.jsdelivr.net/gh/n-101-1/1@main/2.7.js', data: 'https://cdn.jsdelivr.net/gh/n-101-1/1@main/2.7.json' },
+
+  // Emulators
+  nba: { type: 'emu', core: 'n64', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@ab523c866a5d0dda4ea9801dd4d96457e880cbcd/NBA%20Hangtime%20(USA).zip' },
+  madden: { type: 'emu', core: 'n64', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@30884886205950003acc451da53cbb940cbda522/Madden%20NFL%202001%20(USA).zip' },
+  gta2: { type: 'emu', core: 'gba', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@7b7d4dd3051399442aad5ffdc59965324fe241cf/Grand%20Theft%20Auto%202%20(USA).zip' },
+  ippo: { type: 'emu', core: 'gba', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@96959277ef1a7849437f1906727a377c2202c8a3/Hajime%20no%20Ippo%20-%20The%20Fighting%20(English%20v1.0).zip' },
+  cod: { type: 'emu', core: 'nds', url: 'https://cdn.jsdelivr.net/gh/bubbls/ugss@6d4be6f9cce75077f2b28981623eaa057297dac/Call%20of%20Duty%20-%20Black%20Ops%20(USA)/Call%20of%20Duty%20-%20Black%20Ops%20(USA).nds' },
+  fifa: { type: 'emu', core: 'nds', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@b86a41be9fbd3700fe843f72e828a070eb536e6e/FIFA%20Street%202%20(Europe)%20(En%2CFr%2CDe).zip' },
+  fifa99: { type: 'emu', core: 'n64', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@8df9a7774878060fa6c566ac063ca482bed1f06c/FIFA%2099%20(USA)%20(En%2CFr%2CDe%2CEs%2CIt%2CNl%2CPt%2CSv).zip' },
+  mortal: { type: 'emu', core: 'snes', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@f3052c54ad52a52a8274d60e19d1860ebcbbe4f9/Mortal%20Kombat%20(USA).zip' },
+
+  // Troll Roblox
+  trollroblox: { type: 'troll', url: 'https://media1.tenor.com/m/d95fQmHhoagAAAAC/gng-opp.gif' }
+};
+
+// Load game button
+loadButton.onclick = () => {
+  const gameKey = select.value;
+  if (!gameKey) return alert('Please select a game!');
+  localStorage.setItem('lastGame', gameKey);
+  location.reload();
+};
+
+// Fullscreen toggle
+fullscreenButton.onclick = () => {
+  if (!document.fullscreenElement) {
+    container.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+};
+
+// Load last selected game after reload
+window.onload = () => {
+  const lastGame = localStorage.getItem('lastGame');
+  if (!lastGame) return;
+  localStorage.removeItem('lastGame');
+  const game = games[lastGame];
+
+  if(game.type === 'troll') {
+    container.innerHTML = `
+      <div style="color:white;font-size:24px;font-family:Arial;margin-bottom:10px;">Loading..</div>
+      <img src="${game.url}" style="max-width:50%; max-height:50%; width:auto; height:auto;">
+      <div id="glitch-overlay"></div>
+      <div id="copyright">
+        Version 0 Studio -- KM the best programmer on Earth
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = '<div id="glitch-overlay"></div><div id="copyright">Version 0 Studio -- KM the best programmer on Earth</div>';
+
+  if (game.type === 'swf') {
+    const ruffle = window.RufflePlayer.newest();
+    const player = ruffle.createPlayer();
+    container.appendChild(player);
+    player.load(game.url);
+  } else if (game.type === 'iframe') {
+    const iframe = document.createElement('iframe');
+    iframe.src = game.url;
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.objectFit = 'contain';
+    container.appendChild(iframe);
+  } else if (game.type === 'unity') {
+    const script = document.createElement('script');
+    script.src = game.loader;
+    document.body.appendChild(script);
+  } else if (game.type === 'emu') {
+    window.EJS_player = '#game-container';
+    window.EJS_core = game.core;
+    window.EJS_startOnLoaded = true;
+    window.EJS_gameUrl = game.url;
+    window.EJS_pathtodata = "https://cdn.jsdelivr.net/gh/a456pur/seraph@81f551ca0aa8e3d6018d32d8ac5904ac9bc78f76/storage/emulatorjs/data";
+    const script = document.createElement('script');
+    script.src = "https://cdn.jsdelivr.net/gh/a456pur/seraph@81f551ca0aa8e3d6018d32d8ac5904ac9bc78f76/storage/emulatorjs/data/loader.js";
+    document.body.appendChild(script);
+  }
+};
+</script>
+
+</body>
+</html>
+
+

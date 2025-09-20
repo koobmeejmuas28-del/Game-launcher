@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>I Am Pro Game Launcher</title>
 
-<!-- Ultimate Game Stash file--> 
+<!-- Ultimate Game Stash file-->
 <!-- For the regularly updating doc go to https://docs.google.com/document/d/1_FmH3BlSBQI7FGgAQL59-ZPe8eCxs35wel6JUyVaG8Q/ -->
 
 <script src="https://cdn.jsdelivr.net/gh/bubbls/ruffle@31ceb2935f9422effe7c04c3e981d45d94ddf8b3/offtag.js"></script>
@@ -80,6 +80,7 @@
     <option value="onepiece">One Piece (GBA)</option>
     <option value="codwaw">Call of Duty WaW (NDS)</option>
     <option value="legobatman">LEGO Batman (NDS)</option>
+    <option value="tag">Tag (Construct 2)</option>
     <!-- Troll Roblox -->
     <option value="trollroblox">Roblox (Now.gg Emulator)</option>
   </select>
@@ -97,13 +98,30 @@
 </div>
 
 <script>
-// All games
+// utilities
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = () => resolve(src);
+    s.onerror = () => reject(new Error('Failed to load ' + src));
+    document.body.appendChild(s);
+  });
+}
+
+function loadScriptsSequentially(list) {
+  return list.reduce((p, src) => p.then(() => loadScript(src)), Promise.resolve());
+}
+
+// DOM refs
 const select = document.getElementById('gameSelect');
 const loadButton = document.getElementById('loadButton');
 const fullscreenButton = document.getElementById('fullscreenButton');
 const container = document.getElementById('game-container');
 
+// games registry
 const games = {
+  // SWF
   hobo: { type: 'swf', url: 'https://cdn.jsdelivr.net/gh/supaub/interstellar-3@8a13c735e7df6d86602b354e45c090405f21f45a/play/flash/swf/hobo.swf' },
   duck: { type: 'swf', url: 'https://cdn.jsdelivr.net/gh/markrosenbaum/some-repo@aeb3030a3fb90987658ff4ee1063c64f6206152f/dl/duck-life.swf' },
   fancypants: { type: 'swf', url: 'https://cdn.jsdelivr.net/gh/supaub/interstellar-3@8a13c735e7df6d86602b354e45c090405f21f45a/play/flash/swf/fancypantsadventure.swf' },
@@ -112,11 +130,14 @@ const games = {
   basketball: { type: 'swf', url: 'https://cdn.jsdelivr.net/gh/gameproxy/swf_storage_1@907a0283a4167ab7ce5a3f46da958d9deb1abdae/Basketball%20Legends.swf' },
   dig: { type: 'swf', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@02d331c247a0931cf1ee18a8b59e1434841c4b67/dig%20to%20china.swf' },
 
+  // Y8
   slope: { type: 'iframe', url: 'https://y8.com/embed/slope' },
 
+  // Unity WebGL
   motox3m3: { type: 'unity', loader: 'https://cdn.jsdelivr.net/gh/n-101-1/1@main/2.7.js', data: 'https://cdn.jsdelivr.net/gh/n-101-1/1@main/2.7.json' },
   lol1v1: { type: 'unity', loader: 'https://cdn.jsdelivr.net/gh/n-101-1/1@main/2.7.js', data: 'https://cdn.jsdelivr.net/gh/n-101-1/1@main/2.7.json' },
 
+  // Emulators
   nba: { type: 'emu', core: 'n64', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@ab523c866a5d0dda4ea9801dd4d96457e880cbcd/NBA%20Hangtime%20(USA).zip' },
   madden: { type: 'emu', core: 'n64', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@30884886205950003acc451da53cbb940cbda522/Madden%20NFL%202001%20(USA).zip' },
   gta2: { type: 'emu', core: 'gba', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@7b7d4dd3051399442aad5ffdc59965324fe241cf/Grand%20Theft%20Auto%202%20(USA).zip' },
@@ -126,17 +147,34 @@ const games = {
   fifa99: { type: 'emu', core: 'n64', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@8df9a7774878060fa6c566ac063ca482bed1f06c/FIFA%2099%20(USA)%20(En%2CFr%2CDe%2CEs%2CIt%2CNl%2CPt%2CSv).zip' },
   mortal: { type: 'emu', core: 'snes', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@f3052c54ad52a52a8274d60e19d1860ebcbbe4f9/Mortal%20Kombat%20(USA).zip' },
 
+  // Extra start-button emu games
   doom2: { type: 'emu-startbutton', core: 'gba', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@08b3a56443901bdf5bce8ec22ab0e11162f845d6/Doom%20II%20(USA).zip' },
   gtaadvance: { type: 'emu-startbutton', core: 'gba', url: 'https://cdn.jsdelivr.net/gh/mastercodewolf/cdn-gba@23d7b6c67ff8322cdbcea68af9cb33a1e8a6a104/Grand%20Theft%20Auto%20Advance%20(E)(Rising%20Sun).zip' },
-  zelda: { type: 'emu-startbutton', core: 'gba', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@419219978bb582e0f14604d7eddef08dfb7b7af5/Legend%20of%20Zelda%2C%20The%20-%20Link\'s%20Awakening%20(USA%2C%20Europe).zip' },
+  zelda: { type: 'emu-startbutton', core: 'gba', url: 'https://cdn.jsdelivr.net/gh/bubbls/UGS-file-encryption@419219978bb582e0f14604d7eddef08dfb7b7af5/Legend%20of%20Zelda%2C%20The%20-%20Link%27s%20Awakening%20(USA%2C%20Europe).zip' },
   onepiece: { type: 'emu-startbutton', core: 'gba', url: 'https://cdn.jsdelivr.net/gh/vbaemulator/GBA-Roms@83fce514f0e75f92e594509ba96987bf57f14058/One%20Piece%20(USA).zip' },
   codwaw: { type: 'emu-startbutton', core: 'nds', url: 'https://cdn.jsdelivr.net/gh/bubbls/ugss@e1a24919f02b3fff28ea5453f70336b4d82daffe/Call%20of%20Duty%20-%20World%20at%20War%20(USA)/Call%20of%20Duty%20-%20World%20at%20War%20(USA).nds' },
   legobatman: { type: 'emu-startbutton', core: 'nds', url: 'https://cdn.jsdelivr.net/gh/bubbls/ugss@a401bcb0fdfe66333c583eaba5ff219c106054a6/LEGO%20Batman%20-%20The%20Videogame%20(USA)%20(En%2CFr%2CEs)/LEGO%20Batman%20-%20The%20Videogame%20(USA)%20(En%2CFr%2CEs).nds' },
 
+  // Construct 2: Tag
+  tag: {
+    type: 'c2',
+    // These are the helper scripts we will load when Tag is selected.
+    jquery: 'https://code.jquery.com/jquery-3.6.0.min.js',
+    jtag: 'https://cdn.jsdelivr.net/gh/bubbls/ruffle@31ceb2935f9422effe7c04c3e981d45d94ddf8b3/jtag.js',
+    c2tag: 'https://cdn.jsdelivr.net/gh/bubbls/ruffle@31ceb2935f9422effe7c04c3e981d45d94ddf8b3/c2tag.js',
+    // size from your snippet
+    width: 1262,
+    height: 710,
+    // Optional: If you end up uploading the exported Construct2 project assets somewhere,
+    // add their base url here, e.g. assetsBase: 'https://example.com/tag-assets/'
+    assetsBase: ''
+  },
+
+  // Troll
   trollroblox: { type: 'troll', url: 'https://media1.tenor.com/m/d95fQmHhoagAAAAC/gng-opp.gif' }
 };
 
-// Load game logic remains largely the same, with extra handling for 'emu-startbutton' type
+// Save + reload pattern
 loadButton.onclick = () => {
   const gameKey = select.value;
   if (!gameKey) return alert('Please select a game!');
@@ -144,6 +182,7 @@ loadButton.onclick = () => {
   location.reload();
 };
 
+// Fullscreen toggle
 fullscreenButton.onclick = () => {
   if (!document.fullscreenElement) {
     container.requestFullscreen();
@@ -152,13 +191,28 @@ fullscreenButton.onclick = () => {
   }
 };
 
-window.onload = () => {
+// main loader on page load
+window.onload = async () => {
   const lastGame = localStorage.getItem('lastGame');
   if (!lastGame) return;
   localStorage.removeItem('lastGame');
   const game = games[lastGame];
 
-  if(game.type === 'troll') {
+  // small helper to reset container
+  function setBaseContainer() {
+    container.innerHTML = '<div style="color:white;font-size:24px;font-family:Arial;margin-bottom:10px;">Loading..</div>' +
+                          '<img src="https://media1.tenor.com/m/d95fQmHhoagAAAAC/gng-opp.gif" alt="Goofy Loading GIF">' +
+                          '<div id="glitch-overlay"></div>' +
+                          '<div id="copyright">Version 0 Studio -- KM the best programmer on Earth</div>';
+  }
+
+  if (!game) {
+    alert('Selected game not found!');
+    return;
+  }
+
+  // Troll display
+  if (game.type === 'troll') {
     container.innerHTML = `<div style="color:white;font-size:24px;font-family:Arial;margin-bottom:10px;">Loading..</div>
       <img src="${game.url}" style="max-width:50%; max-height:50%; width:auto; height:auto;">
       <div id="glitch-overlay"></div>
@@ -168,35 +222,64 @@ window.onload = () => {
     return;
   }
 
-  container.innerHTML = '<div id="glitch-overlay"></div><div id="copyright">Version 0 Studio -- KM the best programmer on Earth</div>';
+  // Set base container
+  setBaseContainer();
 
-  if(game.type === 'swf') {
-    const ruffle = window.RufflePlayer.newest();
-    const player = ruffle.createPlayer();
-    container.appendChild(player);
-    player.load(game.url);
-  } else if(game.type === 'iframe') {
+  // SWF via Ruffle
+  if (game.type === 'swf') {
+    try {
+      const ruffle = window.RufflePlayer.newest();
+      const player = ruffle.createPlayer();
+      container.appendChild(player);
+      player.load(game.url);
+    } catch (e) {
+      console.error('Ruffle error:', e);
+      container.innerHTML += '<div style="color:red">Failed to load SWF.</div>';
+    }
+    return;
+  }
+
+  // iframe (Y8 etc)
+  if (game.type === 'iframe') {
     const iframe = document.createElement('iframe');
     iframe.src = game.url;
     iframe.style.width = '100%';
     iframe.style.height = '100%';
     iframe.style.objectFit = 'contain';
     container.appendChild(iframe);
-  } else if(game.type === 'unity') {
+    return;
+  }
+
+  // Unity: inject loader script (note: additional handling may be required for Unity data)
+  if (game.type === 'unity') {
     const script = document.createElement('script');
     script.src = game.loader;
     document.body.appendChild(script);
-  } else if(game.type === 'emu') {
-    window.EJS_player = '#game-container';
-    window.EJS_core = game.core;
-    window.EJS_startOnLoaded = true;
-    window.EJS_gameUrl = game.url;
-    window.EJS_pathtodata = "https://cdn.jsdelivr.net/gh/a456pur/seraph@81f551ca0aa8e3d6018d32d8ac5904ac9bc78f76/storage/emulatorjs/data";
-    const script = document.createElement('script');
-    script.src = "https://cdn.jsdelivr.net/gh/a456pur/seraph@81f551ca0aa8e3d6018d32d8ac5904ac9bc78f76/storage/emulatorjs/data/loader.js";
-    document.body.appendChild(script);
-  } else if(game.type === 'emu-startbutton') {
-    // Add a start button for these emulators
+    // you may want to pass the data or instantiate the Unity instance - depends on loader script
+    return;
+  }
+
+  // Regular emulator (load directly into #game-container)
+  if (game.type === 'emu') {
+    try {
+      window.EJS_player = '#game-container';
+      window.EJS_core = game.core;
+      window.EJS_startOnLoaded = true;
+      window.EJS_gameUrl = game.url;
+      window.EJS_pathtodata = "https://cdn.jsdelivr.net/gh/a456pur/seraph@81f551ca0aa8e3d6018d32d8ac5904ac9bc78f76/storage/emulatorjs/data";
+      const script = document.createElement('script');
+      script.src = "https://cdn.jsdelivr.net/gh/a456pur/seraph@81f551ca0aa8e3d6018d32d8ac5904ac9bc78f76/storage/emulatorjs/data/loader.js";
+      document.body.appendChild(script);
+    } catch (e) {
+      console.error(e);
+      container.innerHTML += '<div style="color:red">Failed to load emulator.</div>';
+    }
+    return;
+  }
+
+  // Emulators that prefer a PLAY button
+  if (game.type === 'emu-startbutton') {
+    // Add an inner div and a start button
     container.innerHTML += `<div id="emuGame" style="width:100%; height:100%; display:none;"></div>
       <button id="startButton" style="position:absolute; top:10px; left:50%; transform:translateX(-50%); z-index:20;">PLAY</button>`;
     document.getElementById('startButton').onclick = () => {
@@ -211,8 +294,80 @@ window.onload = () => {
       script.src = "https://cdn.jsdelivr.net/gh/a456pur/seraph@81f551ca0aa8e3d6018d32d8ac5904ac9bc78f76/storage/emulatorjs/data/loader.js";
       document.body.appendChild(script);
     };
+    return;
   }
+
+  // Construct 2 (Tag) loader
+  if (game.type === 'c2') {
+    try {
+      // Replace container content with a Construct2 canvas wrapper
+      container.innerHTML = `
+        <div id="glitch-overlay"></div>
+        <div id="c2canvasdiv" style="width: ${game.width}px; height: ${game.height}px; margin: 0 auto; position: relative;">
+          <canvas id="c2canvas" width="${game.width}" height="${game.height}" style="width:100%; height:100%;"></canvas>
+          <h1 style="display:none">Your browser does not appear to support HTML5. Try upgrading your browser.</h1>
+        </div>
+        <div id="copyright">Version 0 Studio -- KM the best programmer on Earth</div>
+      `;
+
+      // Load required scripts sequentially: jQuery, jtag.js, c2tag.js
+      const scriptList = [game.jquery, game.jtag, game.c2tag];
+      await loadScriptsSequentially(scriptList);
+
+      // Add visibility handlers and SW registration (match your snippet)
+      try {
+        function onVisibilityChanged() {
+          if (document.hidden || document.mozHidden || document.webkitHidden || document.msHidden)
+            if (typeof cr_setSuspended === 'function') cr_setSuspended(true);
+            else console.warn('cr_setSuspended not available');
+          else
+            if (typeof cr_setSuspended === 'function') cr_setSuspended(false);
+        }
+        document.addEventListener("visibilitychange", onVisibilityChanged, false);
+        document.addEventListener("mozvisibilitychange", onVisibilityChanged, false);
+        document.addEventListener("webkitvisibilitychange", onVisibilityChanged, false);
+        document.addEventListener("msvisibilitychange", onVisibilityChanged, false);
+
+        window.C2_RegisterSW = function C2_RegisterSW() {
+          if (!navigator.serviceWorker) return;
+          try {
+            navigator.serviceWorker.register("sw.js", { scope: "./" })
+            .then(function (reg) { console.log("Registered service worker on " + reg.scope); })
+            .catch(function(e){ console.warn("Failed to register service worker: ", e); });
+          } catch (e) { console.warn("Failed to register service worker: ", e); }
+        };
+      } catch (e) {
+        console.warn('C2 visibility/SW setup issue:', e);
+      }
+
+      // Try to start runtime (cr_createRuntime). Both jtag.js and c2tag.js normally call this when ready via jQuery ready,
+      // but we call it explicitly as a fallback if available.
+      if (typeof cr_createRuntime === 'function') {
+        try { cr_createRuntime("c2canvas"); }
+        catch (e) { console.warn('cr_createRuntime error:', e); }
+      } else {
+        // If cr_createRuntime isn't available immediately, give it a moment (some loader combos expect jQuery ready)
+        setTimeout(() => {
+          if (typeof cr_createRuntime === 'function') {
+            try { cr_createRuntime("c2canvas"); }
+            catch (e) { console.warn('cr_createRuntime error on delayed call:', e); }
+          } else {
+            console.warn('cr_createRuntime still not available after script load.');
+          }
+        }, 600);
+      }
+    } catch (err) {
+      console.error('Failed loading Construct2 Tag:', err);
+      setBaseContainer();
+      container.innerHTML += '<div style="color:red">Failed to load Construct 2 game (Tag).</div>';
+    }
+    return;
+  }
+
+  // fallback
+  container.innerHTML += '<div style="color:red">Unknown game type.</div>';
 };
+
 </script>
 
 </body>
